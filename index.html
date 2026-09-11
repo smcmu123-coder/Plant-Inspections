@@ -598,7 +598,10 @@ input[type=date].in,input[type=time].in,
 @media print{
   @page{size:A4;margin:14mm}
   body{background:#fff}
-  .app{display:none!important}
+  /* Nothing belonging to the app itself goes on the paper: the navigation, the
+     splash, messages and any overlay all live outside the page container. */
+  .app, .navpill, .splash, .savewarn, .toast, .scrim, .sigwrap, .scanwrap,
+  .lightbox, .photoview, .dlg{display:none!important}
   .sheetwrap{position:static;display:block!important;background:#fff;overflow:visible}
   .pk-page{page-break-after:always;break-after:page}
   .pk-page:last-child{page-break-after:auto;break-after:auto}
