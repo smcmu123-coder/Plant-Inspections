@@ -18,6 +18,7 @@
   --ink:#121714; --ink-2:#59645C; --ink-3:#8A948C;
   --line:#DDE3DE; --line-2:#ECEFEB; --paper:#fff; --canvas:#F7F9F7;
   --ok:#2E7D46; --ok-bg:#E6F2EA; --warn:#A96A00; --warn-bg:#FAEFDC;
+  --warn-700:#7A4C00; --warn-on:#FFFFFF;
   --bad:#A72B22; --bad-bg:#F8E6E3; --info:#1E4E8C; --info-bg:#E7EEF7;
   --sh:0 1px 2px rgba(20,34,24,.05), 0 10px 24px -18px rgba(20,34,24,.35);
   --r:20px;
@@ -169,7 +170,7 @@ h1.greet{text-align:center;font-size:28px;font-weight:640;letter-spacing:-.03em;
 .pill{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;
   font-size:12px;font-weight:680;white-space:nowrap}
 .pill.ok{background:var(--ok-bg);color:var(--ok)}
-.pill.amber{background:var(--warn-bg);color:var(--warn)}
+.pill.amber{background:var(--warn-bg);color:var(--warn-700)}
 .pill.red{background:var(--bad-bg);color:var(--bad)}
 .pill.grey{background:var(--canvas);color:var(--ink-3)}
 .pill.info{background:var(--info-bg);color:var(--info)}
@@ -275,8 +276,8 @@ input[type=date].in,input[type=time].in,
   border-radius:999px;display:grid;place-items:center;font-size:12px;font-weight:700}
 .tile.amber{background:var(--warn-bg);box-shadow:none}
 .tile.amber .ic{background:rgba(169,106,0,.13);color:var(--warn)}
-.tile.amber .tl,.tile.amber .tv{color:var(--warn)}
-.tile.amber .badge{background:var(--warn);color:#fff}
+.tile.amber .tl,.tile.amber .tv{color:var(--warn-700)}
+.tile.amber .badge{background:var(--warn-700);color:var(--warn-on)}
 .tile.red{background:var(--bad-bg);box-shadow:none}
 .tile.red .ic{background:rgba(167,43,34,.13);color:var(--bad)}
 .tile.red .tl,.tile.red .tv{color:var(--bad)}
@@ -680,7 +681,7 @@ const CONFIG = {
     site: "cheltenhamgreencivils-my.sharepoint.com/personal/jack_layfield_cgcivils_com",
     library: "Documents",
     folder: "{job}/{year}/Site Diaries",
-    filename: "Daily Diary - {job} - {date}",
+    filename: "{form} - {job} - {date}",
     shareLink: "https://cheltenhamgreencivils-my.sharepoint.com/:f:/g/personal/jack_layfield_cgcivils_com/IgC6c0KR-SNsT6nVDuDnCQGoAWkcCvcWBGh5JR2EJlSMZ5s?e=bXdyDb"
   }
 };
@@ -1354,8 +1355,12 @@ function flushSave(){
 
 /* The browser will tell us how much room there is, but only asynchronously,
    so the answer is kept here for the next time the screen is drawn. */
-let quotaBytes = 0, quotaUsed = 0;
+let quotaBytes = 0, quotaUsed = 0, quotaAsked = false;
 function refreshQuota(){
+  /* asked once only: where the browser cannot tell us, asking again on every
+     redraw would spin forever */
+  if(quotaAsked) return Promise.resolve();
+  quotaAsked = true;
   if(!(navigator.storage && navigator.storage.estimate)) return Promise.resolve();
   return navigator.storage.estimate().then(est=>{
     quotaBytes = est.quota || 0;
@@ -3339,25 +3344,11 @@ function otsu(hist, total){
   return thr;
 }
 
-function detectPage(img){
-  const W = img.width, H = img.height;
-  const sc = 240 / Math.max(W,H);
-  const w = Math.max(40, Math.round(W*sc)), h = Math.max(40, Math.round(H*sc));
-  const cv = document.createElement("canvas");
-  cv.width = w; cv.height = h;
-  const g = cv.getContext("2d");
-  g.drawImage(img, 0, 0, w, h);
-  const d = g.getImageData(0,0,w,h).data;
-
-  const grey = new Uint8Array(w*h);
-  const hist = new Uint32Array(256);
-  for(let i=0, p=0; i<d.length; i+=4, p++){
-    const v = (d[i]*0.299 + d[i+1]*0.587 + d[i+2]*0.114) | 0;
-    grey[p] = v; hist[v]++;
-  }
-  const thr = Math.max(60, otsu(hist, w*h) - 6);
-
-  /* largest connected run of bright pixels */
+/* Finding the sheet.
+   A white sheet on a light desk has no single brightness that separates it, so
+   rather than trust one threshold we try several, take the page each one
+   suggests, and keep whichever has the most convincing edges. */
+function pageFromThreshold(grey, w, h, thr){
   const lab = new Int32Array(w*h).fill(-1);
   let bestId = -1, bestSize = 0, id = 0;
   const stack = new Int32Array(w*h);
@@ -3376,11 +3367,8 @@ function detectPage(img){
     if(size > bestSize){ bestSize = size; bestId = id; }
     id++;
   }
+  if(bestId < 0 || bestSize < w*h*0.10) return null;
 
-  const whole = [{x:0,y:0},{x:W,y:0},{x:W,y:H},{x:0,y:H}];
-  if(bestId < 0 || bestSize < w*h*0.12) return { corners: whole, found:false };
-
-  /* extremes of the blob: these are the page corners */
   let tl=null, tr=null, br=null, bl=null;
   let tlv=1e9, trv=-1e9, brv=-1e9, blv=1e9;
   let minX=w, maxX=0, minY=h, maxY=0;
@@ -3394,22 +3382,118 @@ function detectPage(img){
     if(dif > trv){ trv=dif; tr={x,y}; }
     if(dif < blv){ blv=dif; bl={x,y}; }
   }
-  if(!tl||!tr||!br||!bl) return { corners: whole, found:false };
+  if(!tl||!tr||!br||!bl) return null;
+  return { quad:[tl,tr,br,bl], size:bestSize,
+    fills:(maxX-minX) > w*0.985 && (maxY-minY) > h*0.985 };
+}
 
-  /* if it fills nearly the whole frame there was probably no visible edge */
-  const fills = (maxX-minX) > w*0.97 && (maxY-minY) > h*0.97;
-  const k = 1/sc;
-  const out = [tl,tr,br,bl].map(c=>({ x:c.x*k, y:c.y*k }));
+/* How much the picture changes as you step across each edge of the quad.
+   A real sheet edge shows a jump; an imaginary one does not. */
+function edgeStrength(grey, w, h, quad){
+  const at = (x,y) => {
+    const xi = Math.min(w-1, Math.max(0, Math.round(x)));
+    const yi = Math.min(h-1, Math.max(0, Math.round(y)));
+    return grey[yi*w + xi];
+  };
+  let total = 0, n = 0;
+  for(let e=0; e<4; e++){
+    const a = quad[e], b = quad[(e+1)%4];
+    const len = Math.hypot(b.x-a.x, b.y-a.y) || 1;
+    /* outward normal */
+    let nx = (b.y-a.y)/len, ny = -(b.x-a.x)/len;
+    const cx = (quad[0].x+quad[1].x+quad[2].x+quad[3].x)/4;
+    const cy = (quad[0].y+quad[1].y+quad[2].y+quad[3].y)/4;
+    const mx = (a.x+b.x)/2, my = (a.y+b.y)/2;
+    if((mx-cx)*nx + (my-cy)*ny < 0){ nx = -nx; ny = -ny; }
+    for(let i=1; i<=14; i++){
+      const t = i/15;
+      const px = a.x + (b.x-a.x)*t, py = a.y + (b.y-a.y)*t;
+      const inside  = at(px - nx*3, py - ny*3);
+      const outside = at(px + nx*3, py + ny*3);
+      total += Math.abs(inside - outside);
+      n++;
+    }
+  }
+  return n ? total/n : 0;
+}
 
-  /* a page should be a sensible quadrilateral, not a sliver */
+function detectPage(img){
+  const W = img.width, H = img.height;
+  const sc = 240 / Math.max(W,H);
+  const w = Math.max(40, Math.round(W*sc)), h = Math.max(40, Math.round(H*sc));
+  const cv = document.createElement("canvas");
+  cv.width = w; cv.height = h;
+  const g = cv.getContext("2d");
+  g.drawImage(img, 0, 0, w, h);
+  const d = g.getImageData(0,0,w,h).data;
+
+  const grey = new Uint8Array(w*h);
+  const hist = new Uint32Array(256);
+  for(let i=0, p=0; i<d.length; i+=4, p++){
+    const v = (d[i]*0.299 + d[i+1]*0.587 + d[i+2]*0.114) | 0;
+    grey[p] = v; hist[v]++;
+  }
+  const base = otsu(hist, w*h);
+
+  /* Thresholds taken from the picture itself. A sheet on a dark desk separates
+     low down; a sheet on another sheet separates right at the top, so the
+     brightness levels are read off the histogram rather than guessed. */
+  const pct = f => {
+    const want = w*h*f; let run = 0;
+    for(let v=0; v<256; v++){ run += hist[v]; if(run >= want) return v; }
+    return 255;
+  };
+  const tries = [base-10, base, base+12, base+26,
+      pct(0.35), pct(0.5), pct(0.65), pct(0.78), pct(0.86), pct(0.92), pct(0.96),
+      170, 200, 225, 238]
+    .map(t=>Math.max(45, Math.min(250, Math.round(t))))
+    .filter((t,i,arr)=>arr.indexOf(t)===i)
+    .sort((a,b)=>a-b);
+
+  const whole = [{x:0,y:0},{x:W,y:0},{x:W,y:H},{x:0,y:H}];
   const side = (a,b)=>Math.hypot(a.x-b.x, a.y-b.y);
-  const top = side(out[0],out[1]), right = side(out[1],out[2]),
-        bottom = side(out[2],out[3]), left = side(out[3],out[0]);
-  const ratio = Math.min(top,bottom)/Math.max(top,bottom,1);
-  const ratio2 = Math.min(left,right)/Math.max(left,right,1);
-  if(ratio < 0.55 || ratio2 < 0.55) return { corners: whole, found:false };
+  let best = null;
 
-  return { corners: out, found: !fills };
+  tries.forEach(thr=>{
+    const cand = pageFromThreshold(grey, w, h, thr);
+    if(!cand || cand.fills) return;
+
+    const q = cand.quad;
+    const top = side(q[0],q[1]), right = side(q[1],q[2]),
+          bottom = side(q[2],q[3]), left = side(q[3],q[0]);
+    if(Math.min(top,bottom)/Math.max(top,bottom,1) < 0.55) return;
+    if(Math.min(left,right)/Math.max(left,right,1) < 0.55) return;
+
+    const area = Math.abs((q[0].x*q[1].y - q[1].x*q[0].y)
+      + (q[1].x*q[2].y - q[2].x*q[1].y)
+      + (q[2].x*q[3].y - q[3].x*q[2].y)
+      + (q[3].x*q[0].y - q[0].x*q[3].y)) / 2;
+    const frac = area / (w*h);
+    if(frac < 0.14 || frac > 0.97) return;      /* too small, or the whole frame */
+
+    /* a page usually fills a good part of the picture, and has real edges */
+    /* edges matter most; size only breaks a tie */
+    let score = edgeStrength(grey, w, h, q) * (0.8 + frac*0.4);
+
+    /* a sheet photographed on a desk normally has a margin all round; a shape
+       running off the edge of the picture is usually the desk, not the paper */
+    const touching = q.filter(c => c.x <= 1 || c.y <= 1 || c.x >= w-2 || c.y >= h-2).length;
+    if(touching >= 3)      score *= 0.12;
+    else if(touching === 2) score *= 0.30;
+    else if(touching === 1) score *= 0.65;
+    if(!best || score > best.score) best = { quad:q, score, frac };
+  });
+
+  if(!best || best.score < 6) {
+    /* nothing convincing: start the corners just inside the frame so there is
+       something sensible to drag, rather than the whole picture */
+    const ix = W*0.05, iy = H*0.05;
+    return { corners:[{x:ix,y:iy},{x:W-ix,y:iy},{x:W-ix,y:H-iy},{x:ix,y:H-iy}],
+      found:false, weak:true };
+  }
+
+  const k = 1/sc;
+  return { corners: best.quad.map(c=>({ x:c.x*k, y:c.y*k })), found:true };
 }
 
 function warpToPage(img, corners, enhance){
@@ -3822,7 +3906,9 @@ function render(){
   else if(view.name==="timesheet") app.innerHTML = timesheetView();
   else if(view.name==="settings"){
     app.innerHTML = settingsView();
-    if(!quotaBytes) refreshQuota().then(()=>{ if(view.name==="settings") render(); });
+    if(!quotaAsked) refreshQuota().then(()=>{
+      if(quotaBytes && view.name==="settings") render();
+    });
   }
   bind();
   updateNav();
@@ -3969,7 +4055,13 @@ function validate(){
     }
     if(f.type==="repeater"){
       for(let i=0;i<val.length;i++) for(const c of f.columns){
-        if(c.required && (val[i][c.id]===undefined||val[i][c.id]===""))
+        if(c.type==="repeater") continue;            /* a list inside a list is its own affair */
+        if(!visible(c, val[i])) continue;            /* only what is actually on screen */
+        const cv = val[i][c.id];
+        const empty = c.type==="duration" ? durEmpty(cv)
+          : c.type==="check" ? (!cv || cv.v===undefined)
+          : (cv===undefined || cv==="" || (Array.isArray(cv) && !cv.length));
+        if(c.required && empty)
           { e[f.id]=(f.itemLabel||"Row")+" "+(i+1)+": "+c.label+" is required"; return; }
       }
     }
@@ -5288,7 +5380,7 @@ function packView(){
     </div>
 
     ${gaps.length ? `<div class="card" style="background:var(--warn-bg);box-shadow:none">
-      <h3 style="color:var(--warn)">${gaps.length} record${gaps.length===1?"":"s"} outstanding</h3>
+      <h3 style="color:var(--warn-700)">${gaps.length} record${gaps.length===1?"":"s"} outstanding</h3>
       <p style="margin-bottom:8px">The pack can still be published. Anything missing is listed
       on its own page rather than quietly left out.</p>
       ${gaps.slice(0,8).map(g=>`<div style="font-size:13.5px;color:var(--ink-2);padding:2px 0">
@@ -6094,7 +6186,7 @@ function settingsView(){
       <div class="f" style="margin:0"><label>Chasing diaries from</label>
         <div class="hint">The app ignores anything before this date, so it never asks for
         diaries that were kept on paper.</div>
-        <input class="in" type="date" data-start="1" value="${esc(DB.startDate||todayISO())}"></div>
+        <input class="in" type="date" data-startdate="1" value="${esc(DB.startDate||todayISO())}"></div>
     </div>
 
     <div class="sect">Working hours — ${esc(DB.job)}</div>
@@ -6226,6 +6318,7 @@ function pathFor(r){
     .replace(/{job}/g, r.job).replace(/{year}/g, d.getFullYear())
     .replace(/{month}/g, MON[d.getMonth()]);
   const file = c.sharepoint.filename
+    .replace(/{form}/g, sheetTitleFor(r))
     .replace(/{job}/g, r.job).replace(/{date}/g, r.date).replace(/{ref}/g, r.ref||"");
   return (c.sharepoint.site?c.sharepoint.site+"/":"") + c.sharepoint.library + "/" + folder + "/" + file + ".pdf";
 }
@@ -6703,7 +6796,7 @@ function bind(){
     el.onchange = el.oninput;
   });
 
-  const sd = app.querySelector("[data-start]");
+  const sd = app.querySelector("[data-startdate]");
   if(sd) sd.oninput = ()=>{ if(sd.value){ DB.startDate = sd.value; save(); } };
 
   const jb = app.querySelector("[data-job]");
@@ -7344,6 +7437,25 @@ function submitForm(){
 }
 
 /* -------------------------------------------------------------------- PDF -- */
+/* What a record is called, wherever it is shown or printed. */
+function sheetTitleFor(r){
+  if(!r) return "Record";
+  if(r.form === "plantcheck"){
+    const m = (DB.plant||[]).find(x=>x.id===r.plantId) || {};
+    const sheet = sheetFor(m.type||"Excavator") || CHECKSHEETS.Excavator;
+    return sheet.title || ((m.type||"Plant") + " Daily & Weekly Inspections");
+  }
+  const named = {
+    diary:      "Daily Diary",
+    briefing:   "Daily Activities Briefing",
+    havs:       "Hand Arm Vibration (HAVs) Record Sheet",
+    puwer:      "PUWER Register",
+    loler:      "Register of Excavator Lifting Equipment",
+    excavation: "Excavation Inspection"
+  };
+  return named[r.form] || formDef(r.form).name;
+}
+
 function printRecord(id){
   const r = DB.records.find(x=>x.id===id);
   const c = cfg();
@@ -7406,7 +7518,7 @@ function printRecord(id){
   document.getElementById("sheet").innerHTML = `
     <div class="ph-head">
       <img src="${LOGO}" alt="${esc(c.company)}">
-      <div style="text-align:right"><h1>${r.form==="plantcheck"?"Excavator Inspection":"Daily Diary"}</h1>
+      <div style="text-align:right"><h1>${esc(sheetTitleFor(r))}</h1>
       <div style="font-size:10.5px;color:#555">${esc(r.ref||"")} · v${r.version||1}</div></div>
     </div>
     <table>
@@ -7419,14 +7531,14 @@ function printRecord(id){
           <tr><th>Model</th><td>${esc(m.model||m.item||"—")}</td></tr>
           <tr><th>Week commencing</th><td>${shortDate(weekStart(r.date))}</td></tr>`;
       })()}
-      <tr><th>Inspection date</th><td>${longDate(r.date)}</td></tr>
-      <tr><th>${r.form==="plantcheck"?"Competent person":"Completed by"}</th>
+      <tr><th>Date</th><td>${longDate(r.date)}</td></tr>
+      <tr><th>${r.form==="plantcheck"||r.form==="excavation"?"Competent person":"Completed by"}</th>
         <td>${esc(r.by)} — ${stamp(r.submittedAt)}</td></tr>
     </table>
     ${body}
     <div class="foot"><span>${esc(c.company)} · ${esc(r.ref||"")}</span>
       <span>Printed ${stamp(Date.now())}</span></div>`;
-  document.getElementById("sheetTitle").textContent = "Daily Diary — " + shortDate(r.date);
+  document.getElementById("sheetTitle").textContent = sheetTitleFor(r) + " — " + shortDate(r.date);
   document.getElementById("sheetwrap").classList.add("open");
   window.scrollTo(0,0);
 }
@@ -7714,11 +7826,8 @@ runSplash();          /* on screen while the store is opened */
 
 </script>
 <script>
-/* Registered from the page so the browser treats this as an installable app. */
 if("serviceWorker" in navigator){
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js").catch(()=>{});
-  });
+  window.addEventListener("load", () => { navigator.serviceWorker.register("sw.js").catch(()=>{}); });
 }
 </script>
 </body>
