@@ -920,17 +920,61 @@ body.isdemo .app{padding-top:76px}
   font-size:12px;line-height:1.5}
 .sheet h1{font-size:19px;margin:0}
 .sheet .ph-head{display:flex;justify-content:space-between;align-items:flex-start;
-  border-bottom:2.5px solid #1F5A2D;padding-bottom:9px;margin-bottom:14px;gap:14px}
+  border-bottom:2px solid #1F5A2D;padding-bottom:10px;margin-bottom:14px;gap:14px}
 .sheet .ph-head img{width:150px;height:auto}
+.sheet h1{letter-spacing:-.02em;color:#123D1E}
 .pk-page{padding-bottom:26px;margin-bottom:26px;border-bottom:2px dashed #CFD6D1}
 .pk-page:last-child{border-bottom:0;margin-bottom:0}
-.pk-cover{text-align:center;padding:40px 0 30px}
-.pk-cover h1{font-size:26px;margin:18px 0 6px;letter-spacing:-.02em}
-.pk-cover .wc{font-size:15px;color:#555;margin-bottom:22px}
+
+/* ---- cover ---------------------------------------------------------------
+   The same hierarchy as the app's home screen: the mark, then a small spaced
+   over-line, then the title carrying the weight. */
+.pk-cover{text-align:center;padding:52px 0 34px}
+.pk-cover .over{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+  color:#4A7C58;margin:26px 0 10px}
+.pk-cover h1{font-size:32px;margin:0 0 8px;letter-spacing:-.03em;line-height:1.1;color:#123D1E}
+.pk-cover .wc{font-size:15px;color:#555;margin-bottom:24px}
+.pk-cover .rule{width:96px;height:2px;background:#1F5A2D;margin:0 auto 26px}
 .pk-draft{display:inline-block;border:2px solid #A72B22;color:#A72B22;font-weight:700;
   padding:7px 14px;border-radius:4px;margin-bottom:16px;letter-spacing:.04em}
-.pk-h{background:#1F5A2D;color:#fff;font-weight:700;font-size:11px;padding:6px 9px;
-  margin:14px 0 6px;border-radius:2px}
+
+/* ---- contents ------------------------------------------------------------
+   A numbered list with a hairline between rows, not a bordered grid. The
+   numbers here are the numbers printed on the divider pages, so anyone
+   flicking through the pack can find a section without reading it. */
+.pk-toc{margin-top:4px}
+.pk-toc .r{display:flex;align-items:baseline;gap:12px;padding:11px 2px;
+  border-bottom:1px solid #DCE2DE}
+.pk-toc .r:last-child{border-bottom:0}
+.pk-toc .n{width:30px;flex:none;font-size:13px;font-weight:700;color:#1F5A2D;
+  font-variant-numeric:tabular-nums}
+.pk-toc .nm{flex:1;font-size:14px;font-weight:650;color:#111;letter-spacing:-.01em}
+.pk-toc .ct{flex:none;font-size:11.5px;color:#555;white-space:nowrap;font-weight:600}
+.pk-toc .r.gap .n{color:#8A5000}
+.pk-toc .r.gap .nm{color:#8A5000}
+
+/* ---- section divider -----------------------------------------------------
+   A whole page announcing what comes next, so it is obvious in a printed pack
+   where one set of paperwork ends and the next begins. The title sits on a
+   tinted band, which survives a black-and-white photocopier where a colour
+   heading would not. */
+.pk-div{display:flex;flex-direction:column;justify-content:center;min-height:150mm;
+  padding:10px 0}
+.pk-div .mark{width:132px;height:auto;margin-bottom:auto}
+.pk-div .num{font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+  color:#4A7C58;margin:0 0 16px}
+.pk-div h1{font-size:44px;line-height:1.16;letter-spacing:-.035em;color:#1F5A2D;
+  font-weight:700;margin:0}
+.pk-div h1 span{background:#E4EDE7;padding:2px 12px;
+  -webkit-box-decoration-break:clone;box-decoration-break:clone}
+.pk-div .meta{margin-top:30px;padding-top:14px;border-top:2px solid #1F5A2D;
+  display:flex;flex-wrap:wrap;gap:6px 26px;font-size:12px;color:#555;font-weight:600}
+.pk-div .meta b{color:#111;font-weight:700}
+.pk-div .tail{margin-top:auto;padding-top:26px;font-size:10.5px;color:#777}
+/* Section headings across every sheet share one shape with the app's own:
+   spaced capitals on the brand green, lightly rounded. */
+.pk-h{background:#1F5A2D;color:#fff;font-weight:700;font-size:10.5px;padding:6px 11px;
+  margin:15px 0 7px;border-radius:5px;letter-spacing:.07em;text-transform:uppercase}
 .sheet table.pk{width:100%;border-collapse:collapse;margin-bottom:8px;font-size:10.5px}
 .sheet table.pk.fixed{table-layout:fixed}
 .sheet table.pk.fixed th,.sheet table.pk.fixed td{overflow-wrap:anywhere}
@@ -940,8 +984,8 @@ body.isdemo .app{padding-top:76px}
 .sheet table.pk td.c{text-align:center}
 .sheet table.pk td.bad{color:#A72B22;font-weight:700}
 .sheet .pk-sig{height:46px}
-.sheet h2{font-size:11.5px;background:#1F5A2D;color:#fff;padding:5px 9px;margin:15px 0 8px;
-  border-radius:3px;font-weight:650}
+.sheet h2{font-size:10.5px;background:#1F5A2D;color:#fff;padding:6px 11px;margin:15px 0 8px;
+  border-radius:5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase}
 .sheet table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:8px;
   display:table;white-space:normal;overflow:visible}
 .sheet th,.sheet td{border:1px solid #CBD3CD;padding:5px 7px;text-align:left;vertical-align:top}
@@ -960,6 +1004,7 @@ body.isdemo .app{padding-top:76px}
   .sheetwrap{position:static;display:block!important;background:#fff;overflow:visible}
   .pk-page{page-break-after:always;break-after:page}
   .pk-page:last-child{page-break-after:auto;break-after:auto}
+  .pk-div{min-height:225mm}
   .sheetbar{display:none!important}
   .sheet{width:auto;margin:0;padding:0}
 }
@@ -3119,12 +3164,44 @@ function openPackSheet(ws, draft){
 
   const page = inner => `<div class="pk-page">${inner}</div>`;
 
+  /* How many sheets each section contributes, said the same way on the
+     contents page and on that section's divider. */
+  const sheetCount = sec => {
+    if(sec.key==="plantcheck" && checksOnPaper())
+      return scansFor(ws,"plantcheck").reduce((t,x)=>t+x.pages.length,0);
+    return sec.key==="plantcheck"
+      ? [...new Set(sec.items.map(r=>r.plantId))].length : sec.items.length;
+  };
+  const countWords = sec => {
+    const n = sheetCount(sec);
+    if(sec.key==="plantcheck" && checksOnPaper())
+      return n + (n===1?" scanned sheet":" scanned sheets");
+    return sec.key==="plantcheck" ? n + (n===1?" machine":" machines")
+      : n + (n===1?" record":" records");
+  };
+
+  /* A whole page announcing each section. In a printed pack it is the only
+     reliable way to see where one set of paperwork ends and the next starts. */
+  const divider = (sec, i) => page(`<div class="pk-div">
+      <img class="mark" src="${LOGO}" alt="${esc(c.company)}">
+      <div class="num">Section ${i+1} of ${secs.length}</div>
+      <h1><span>${esc(sec.name)}</span></h1>
+      <div class="meta">
+        <div>${esc(countWords(sec))}</div>
+        <div>Week commencing <b>${shortDate(ws)}</b></div>
+        <div>Site <b>${esc(DB.job)}</b></div>
+      </div>
+      <div class="tail">${esc(c.company)} · Weekly Health and Safety Pack · ${esc(ref)}</div>
+    </div>`);
+
   /* ---- cover and contents ---- */
   let html = page(`<div class="pk-cover">
       <img src="${LOGO}" alt="${esc(c.company)}" style="width:190px">
       ${draft?`<div style="margin-top:22px"><span class="pk-draft">DRAFT — NOT PUBLISHED</span></div>`:""}
+      <div class="over">${esc(c.company)}</div>
       <h1>Weekly Health and Safety Pack</h1>
       <div class="wc">Week commencing ${longDate(ws)}</div>
+      <div class="rule"></div>
     </div>
     ${tbl(null, [
       ["Site", DB.job, "Week", shortDate(ws)+" to "+shortDate(addDays(ws,6))],
@@ -3133,20 +3210,25 @@ function openPackSheet(ws, draft){
     ].concat(gaps.length ? [["Records outstanding", String(gaps.length), "", ""]] : []))}`);
 
   html += page(`<div class="pk-h">Contents</div>
-    ${tbl(["Section","Sheets"], secs.map((sec,i)=>{
-      if(sec.key==="plantcheck" && checksOnPaper()){
-        const sc = scansFor(ws,"plantcheck");
-        const pages = sc.reduce((t,x)=>t+x.pages.length,0);
-        return [(i+1)+".  "+sec.name+" (paper)", pages + (pages===1?" sheet":" sheets")];
-      }
-      const n = sec.key==="plantcheck"
-        ? [...new Set(sec.items.map(r=>r.plantId))].length : sec.items.length;
-      return [(i+1)+".  "+sec.name, n + (sec.key==="plantcheck"
-        ? (n===1?" machine":" machines") : (n===1?" record":" records"))];
-    }).concat(gaps.length ? [["Records outstanding", String(gaps.length)]] : []))}`);
+    <div class="pk-toc">
+      ${secs.map((sec,i)=>`<div class="r">
+        <div class="n">${i+1}</div>
+        <div class="nm">${esc(sec.name)}${
+          sec.key==="plantcheck" && checksOnPaper() ? " (paper)" : ""}</div>
+        <div class="ct">${esc(countWords(sec))}</div>
+      </div>`).join("")}
+      ${gaps.length ? `<div class="r gap">
+        <div class="n">!</div>
+        <div class="nm">Records outstanding</div>
+        <div class="ct">${gaps.length} not done this week</div>
+      </div>` : ""}
+    </div>
+    <p style="font-size:10.5px;color:#555;margin-top:12px"><i>Each section opens with its own
+      page, so the pack can be split up or filed a section at a time.</i></p>`);
 
   /* ---- a page per sheet ---- */
-  secs.forEach(sec=>{
+  secs.forEach((sec, si)=>{
+    html += divider(sec, si);
     if(sec.key === "plantcheck" && checksOnPaper()){
       scansFor(ws, "plantcheck").forEach(sc=>{
         const m = (DB.plant||[]).find(x=>x.id===sc.plantId) || {};
@@ -3406,8 +3488,49 @@ async function buildPackPdf(ws, draft){
     ["Completed by", rec.by || c.user.name, "Reference", rec.ref || ""]
   ].concat(extra || []);
 
+  const countWords = sec => {
+    if(sec.key==="plantcheck" && checksOnPaper()){
+      const n = scansFor(ws,"plantcheck").reduce((t,x)=>t+x.pages.length,0);
+      return n + (n===1?" scanned sheet":" scanned sheets");
+    }
+    if(sec.key==="plantcheck"){
+      const n = [...new Set(sec.items.map(r=>r.plantId))].length;
+      return n + (n===1?" machine":" machines");
+    }
+    return sec.items.length + (sec.items.length===1?" record":" records");
+  };
+
+  /* A page of its own in front of every section, matching the one on screen:
+     the mark, the section number, the name on a tinted band, and what is in
+     it. The band is what makes the break survive a black-and-white copier. */
+  const divider = (sec, i) => {
+    doc.newPage();
+    if(logo) doc.image(logo, 118);
+    doc.y = PdfDoc.H * 0.56;
+    doc.text("SECTION " + (i+1) + " OF " + secs.length,
+      { size:9, bold:true, colour:[.29,.49,.35], after:12 });
+    /* the tinted band behind the title */
+    const bandH = 30;
+    const w = Math.min(wide, pdfWidth(sec.name, 26) + 24);
+    doc.page.ops.push(`0.894 0.929 0.906 rg ${PdfDoc.M} ${(doc.y-bandH+7).toFixed(1)} `
+      + `${w.toFixed(1)} ${bandH} re f`);
+    doc.page.ops.push(`BT 0.122 0.353 0.176 rg /F2 26 Tf 1 0 0 1 ${(PdfDoc.M+12)} `
+      + `${(doc.y-bandH+17).toFixed(1)} Tm (${pdfEsc(sec.name)}) Tj ET`);
+    doc.y -= bandH + 20;
+    doc.page.ops.push(`0.122 0.353 0.176 RG 1.6 w ${PdfDoc.M} ${doc.y.toFixed(1)} m `
+      + `${(PdfDoc.W-PdfDoc.M).toFixed(1)} ${doc.y.toFixed(1)} l S`);
+    doc.y -= 16;
+    doc.text(countWords(sec) + "     Week commencing " + shortDate(ws)
+      + "     Site " + DB.job, { size:10, colour:[.35,.39,.36], after:6 });
+    doc.y = PdfDoc.M + 24;
+    doc.text(c.company + " · Weekly Health and Safety Pack · " + ref,
+      { size:8, colour:[.5,.54,.51] });
+  };
+
   secs.forEach((sec, si)=>{
-    let first = true;
+    divider(sec, si);
+    starts.push(doc.pages.length);
+    let first = false;
 
     /* ---- plant: a page per machine, laid out like the paper sheet ---- */
     if(sec.key === "plantcheck"){
@@ -3668,8 +3791,9 @@ async function buildPackPdf(ws, draft){
   const saveTo = doc.page, saveY = doc.y;
   doc.page = contentsAnchor.page; doc.y = contentsAnchor.y;
   secs.forEach((sec, i)=>{
-    doc.pair((i+1) + ".  " + sec.name,
-      sec.items.length + (sec.items.length===1?" record":" records") + "     page " + starts[i]);
+    /* the page quoted is the section's divider, which is what someone
+       flicking through the printed pack will actually land on */
+    doc.pair((i+1) + ".  " + sec.name, countWords(sec) + "     page " + starts[i]);
   });
   if(gapsPage) doc.pair("Records outstanding", gaps.length + "     page " + gapsPage, [.66,.42,0]);
   doc.pair("Total pages", String(total));
